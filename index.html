@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>課題管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:#f5f5f0;min-height:100vh;padding:1.5rem}
+.app{max-width:680px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e0ddd6;overflow:hidden}
+.header{padding:1.25rem 1.5rem;border-bottom:1px solid #e0ddd6;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:500;color:#1a1a18;display:flex;align-items:center;gap:8px}
+.header h1 svg{width:20px;height:20px;opacity:0.7}
+.header span{font-size:13px;color:#888780}
+.add-form{padding:1rem 1.5rem;border-bottom:1px solid #e0ddd6;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#888780}
+input[type=text],input[type=date],select{height:36px;padding:0 10px;border:1px solid #d3d1c7;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a18;outline:none}
+input[type=text]:focus,input[type=date]:focus,select:focus{border-color:#7f77dd;box-shadow:0 0 0 2px rgba(127,119,221,0.15)}
+input[type=text]{flex:1;min-width:160px}
+input[type=date]{width:150px}
+select{width:110px}
+button.add-btn{height:36px;padding:0 16px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;font-size:14px;font-family:inherit;cursor:pointer;color:#1a1a18;display:flex;align-items:center;gap:6px;white-space:nowrap}
+button.add-btn:hover{background:#f5f5f0}
+button.add-btn:active{transform:scale(0.98)}
+.stats{display:flex;gap:8px;padding:0.75rem 1.5rem;border-bottom:1px solid #e0ddd6}
+.stat{flex:1;background:#f5f5f0;border-radius:8px;padding:8px 12px;text-align:center}
+.stat-num{font-size:20px;font-weight:500;color:#1a1a18}
+.stat-label{font-size:11px;color:#888780;margin-top:2px}
+.filter-bar{padding:0.5rem 1.5rem;display:flex;gap:6px;border-bottom:1px solid #e0ddd6;flex-wrap:wrap}
+.filter-btn{font-size:12px;padding:4px 12px;border-radius:8px;border:1px solid #d3d1c7;background:none;cursor:pointer;color:#888780;font-family:inherit}
+.filter-btn.active{background:#f5f5f0;color:#1a1a18;font-weight:500}
+.task-list{padding:0.5rem 1.5rem}
+.task-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1efe8}
+.task-item:last-child{border-bottom:none}
+.task-item.done .task-name{text-decoration:line-through;color:#b4b2a9}
+input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:#534AB7;flex-shrink:0}
+.task-name{flex:1;font-size:14px;color:#1a1a18}
+.task-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.badge{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:500}
+.badge-high{background:#EEEDFE;color:#3C3489}
+.badge-mid{background:#FAEEDA;color:#633806}
+.badge-low{background:#EAF3DE;color:#27500A}
+.date-badge{font-size:12px;color:#888780;display:flex;align-items:center;gap:3px}
+.date-badge.overdue{color:#a32d2d;font-weight:500}
+.date-badge.soon{color:#854f0b;font-weight:500}
+.del-btn{background:none;border:none;cursor:pointer;color:#b4b2a9;padding:4px;font-size:18px;line-height:1;border-radius:4px}
+.del-btn:hover{color:#a32d2d;background:#fcebeb}
+.empty{text-align:center;padding:2.5rem;color:#b4b2a9;font-size:14px}
+.empty svg{display:block;margin:0 auto 12px;opacity:0.4}
+.save-note{font-size:11px;color:#b4b2a9;text-align:center;padding:0.5rem;border-top:1px solid #f1efe8}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      課題管理
+    </h1>
+    <span id="date-display"></span>
+  </div>
+
+  <div class="add-form">
+    <div class="field" style="flex:1;min-width:160px">
+      <label>課題名</label>
+      <input type="text" id="task-input" placeholder="例：レポート提出" />
+    </div>
+    <div class="field">
+      <label>締め切り</label>
+      <input type="date" id="date-input" />
+    </div>
+    <div class="field">
+      <label>優先度</label>
+      <select id="prio-input">
+        <option value="high">🔴 高</option>
+        <option value="mid" selected>🟡 中</option>
+        <option value="low">🟢 低</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="add-btn" id="add-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        追加
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="s-total">0</div><div class="stat-label">合計</div></div>
+    <div class="stat"><div class="stat-num" id="s-remain">0</div><div class="stat-label">残り</div></div>
+    <div class="stat"><div class="stat-num" id="s-overdue" style="color:#a32d2d">0</div><div class="stat-label">期限切れ</div></div>
+    <div class="stat"><div class="stat-num" id="s-done" style="color:#3b6d11">0</div><div class="stat-label">完了</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">すべて</button>
+    <button class="filter-btn" data-filter="active">未完了</button>
+    <button class="filter-btn" data-filter="done">完了済み</button>
+    <button class="filter-btn" data-filter="overdue">期限切れ</button>
+  </div>
+
+  <div class="task-list" id="task-list">
+    <div class="empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      課題を追加してみましょう
+    </div>
+  </div>
+
+  <div class="save-note">データはこのブラウザに自動保存されます</div>
+</div>
+
+<script>
+const STORAGE_KEY = 'kadai_tasks';
+let tasks = [];
+let filter = 'all';
+
+const today = new Date();
+today.setHours(0,0,0,0);
+
+document.getElementById('date-display').textContent = today.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+const def = new Date(today.getTime()+7*86400000);
+document.getElementById('date-input').value = def.toISOString().split('T')[0];
+document.getElementById('date-input').min = today.toISOString().split('T')[0];
+
+function load(){
+  try{ tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }
+  catch(e){ tasks=[]; }
+}
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function dateStatus(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const diff = Math.round((d-today)/(1000*60*60*24));
+  if(diff<0) return {label:'期限切れ '+Math.abs(diff)+'日前',cls:'overdue'};
+  if(diff===0) return {label:'今日が締め切り',cls:'soon'};
+  if(diff<=3) return {label:'あと'+diff+'日',cls:'soon'};
+  return {label:new Date(dateStr).toLocaleDateString('ja-JP',{month:'short',day:'numeric'}),cls:''};
+}
+
+function render(){
+  const list = document.getElementById('task-list');
+  let visible = tasks.filter(t=>{
+    if(filter==='active') return !t.done;
+    if(filter==='done') return t.done;
+    if(filter==='overdue'){ const s=dateStatus(t.date); return s&&s.cls==='overdue'&&!t.done; }
+    return true;
+  });
+
+  const total=tasks.length, done=tasks.filter(t=>t.done).length;
+  const overdue=tasks.filter(t=>{ const s=dateStatus(t.date); return s&&s.cls==='overdue'&&!t.done; }).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-remain').textContent=total-done;
+  document.getElementById('s-overdue').textContent=overdue;
+  document.getElementById('s-done').textContent=done;
+
+  if(!visible.length){
+    list.innerHTML='<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'+(filter==='done'?'完了済みの課題はありません':'課題を追加してみましょう')+'</div>';
+    return;
+  }
+
+  const sorted=[...visible].sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    const p={high:0,mid:1,low:2};
+    if(p[a.prio]!==p[b.prio]) return p[a.prio]-p[b.prio];
+    if(a.date&&b.date) return new Date(a.date)-new Date(b.date);
+    return 0;
+  });
+
+  list.innerHTML = sorted.map(t=>{
+    const ds=dateStatus(t.date);
+    const prioLabel=t.prio==='high'?'高':t.prio==='mid'?'中':'低';
+    const prioCls=t.prio==='high'?'badge-high':t.prio==='mid'?'badge-mid':'badge-low';
+    return `<div class="task-item${t.done?' done':''}">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggle(${t.id})">
+      <span class="task-name">${t.name}</span>
+      <div class="task-meta">
+        ${ds?`<span class="date-badge ${ds.cls}">${ds.label}</span>`:''}
+        <span class="badge ${prioCls}">${prioLabel}</span>
+        <button class="del-btn" onclick="del(${t.id})" title="削除">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggle(id){ const t=tasks.find(t=>t.id===id); if(t){ t.done=!t.done; save(); render(); } }
+function del(id){ if(confirm('削除しますか？')){ tasks=tasks.filter(t=>t.id!==id); save(); render(); } }
+
+document.getElementById('add-btn').onclick=()=>{
+  const name=document.getElementById('task-input').value.trim();
+  if(!name) return;
+  tasks.push({id:Date.now(),name,date:document.getElementById('date-input').value,prio:document.getElementById('prio-input').value,done:false});
+  document.getElementById('task-input').value='';
+  save(); render();
+};
+document.getElementById('task-input').onkeydown=e=>{ if(e.key==='Enter') document.getElementById('add-btn').click(); };
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.onclick=()=>{ filter=btn.dataset.filter; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); };
+});
+
+load(); render();
+</script>
+</body>
+</html>
